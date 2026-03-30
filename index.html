@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pass Flow | Secure Password CLI for Windows</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-green: #10b981;
+            --dark-green: #059669;
+            --bg-white: #ffffff;
+            --light-gray: #f9fafb;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-white);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* --- BUTTON STYLES --- */
+        .btn-primary {
+            background: var(--primary-green);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary:hover { 
+            background: var(--dark-green); 
+            transform: translateY(-2px); 
+            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);
+        }
+
+        /* --- EULA & IMPRESSUM MODAL --- */
+        #eula-overlay, #impressum-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            transition: opacity 0.4s ease;
+        }
+
+        #impressum-overlay {
+            display: none; /* Standardmäßig aus */
+            z-index: 10000;
+        }
+
+        .eula-container {
+            background: white;
+            max-width: 700px;
+            width: 100%;
+            max-height: 80vh;
+            border-radius: 12px;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .eula-content {
+            overflow-y: auto;
+            margin: 20px 0;
+            padding-right: 15px;
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .eula-content h2 { color: var(--text-main); margin: 20px 0 10px; }
+
+        .eula-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        /* --- NAVIGATION --- */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 1000;
+            height: 80px;
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+
+        .logo {
+            font-weight: 800;
+            font-size: 1.6rem;
+            color: var(--text-main);
+            text-decoration: none;
+            letter-spacing: -1px;
+        }
+
+        .logo span { color: var(--primary-green); }
+
+        .nav-links { display: flex; gap: 30px; list-style: none; }
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-weight: 500;
+            transition: var(--transition);
+        }
+        .nav-links a:hover { color: var(--primary-green); }
+
+        /* --- HERO SECTION --- */
+        .hero {
+            padding: 180px 20px 100px;
+            background: radial-gradient(circle at top right, #f0fdf4, transparent);
+            text-align: center;
+        }
+
+        .hero-badge {
+            background: #d1fae5;
+            color: var(--dark-green);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            letter-spacing: -1.5px;
+            line-height: 1.1;
+        }
+
+        .hero p {
+            max-width: 700px;
+            margin: 0 auto 30px;
+            font-size: 1.2rem;
+            color: var(--text-muted);
+        }
+
+        .hero-cta-box {
+            margin-bottom: 60px;
+        }
+
+        /* --- TERMINAL MOCKUP --- */
+        .terminal-window {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #1e1e1e;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.15);
+            text-align: left;
+            font-family: 'Fira Code', monospace;
+        }
+
+        .terminal-header {
+            background: #333;
+            padding: 10px 15px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .dot-red { background: #ff5f56; }
+        .dot-yellow { background: #ffbd2e; }
+        .dot-green { background: #27c93f; }
+
+        .terminal-body {
+            padding: 25px;
+            color: #d4d4d4;
+            font-size: 0.95rem;
+        }
+
+        .cmd { color: var(--primary-green); }
+        .cursor { animation: blink 1s infinite; }
+
+        @keyframes blink { 50% { opacity: 0; } }
+
+        /* --- FEATURES SECTION --- */
+        .section-padding { padding: 100px 20px; }
+        .container { max-width: 1100px; margin: 0 auto; }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .section-title h2 { font-size: 2.5rem; margin-bottom: 15px; letter-spacing: -1px; }
+        .section-title p { color: var(--text-muted); font-size: 1.1rem; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .card {
+            padding: 40px;
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            transition: var(--transition);
+            background: white;
+        }
+
+        .card:hover {
+            border-color: var(--primary-green);
+            box-shadow: var(--shadow);
+            transform: translateY(-5px);
+        }
+
+        .icon-box {
+            width: 50px;
+            height: 50px;
+            background: #ecfdf5;
+            color: var(--primary-green);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+
+        /* --- WORKFLOW SECTION --- */
+        .workflow { background: var(--light-gray); }
+
+        .step-item {
+            display: flex;
+            gap: 40px;
+            align-items: center;
+            margin-bottom: 80px;
+        }
+
+        .step-item:nth-child(even) { flex-direction: row-reverse; }
+
+        .step-text { flex: 1; }
+        .step-text h3 { font-size: 1.8rem; margin-bottom: 15px; color: var(--primary-green); letter-spacing: -0.5px; }
+        .step-number { font-weight: 800; color: #d1fae5; font-size: 4rem; line-height: 1; margin-bottom: 10px; }
+
+        /* --- SECURITY BOX --- */
+        .security-banner {
+            background: var(--text-main);
+            color: white;
+            border-radius: 24px;
+            padding: 60px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .security-banner h2 { font-size: 2.2rem; margin-bottom: 20px; letter-spacing: -1px;}
+        .security-banner p { opacity: 0.8; max-width: 600px; margin: 0 auto 30px; }
+
+        /* --- FOOTER --- */
+        footer {
+            border-top: 1px solid var(--border-color);
+            padding: 60px 20px;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .footer-links {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .footer-links a {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .footer-links a:hover { color: var(--primary-green); }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.5rem; }
+            .nav-links { display: none; }
+            .step-item, .step-item:nth-child(even) { flex-direction: column; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="eula-overlay">
+        <div class="eula-container">
+            <h1>Willkommen bei Pass Flow</h1>
+            <p>Bitte lesen und akzeptieren Sie die Endbenutzer-Lizenzvereinbarung, um fortzufahren.</p>
+            
+            <div class="eula-content">
+                <h2>1. Allgemeines</h2>
+                <p>Die Software „Pass Flow“ wird kostenlos zur Verfügung gestellt und dient zur Speicherung und Verschlüsselung von Passwörtern.</p>
+                
+                <h2>2. Funktionen der Software</h2>
+                <p>Pass Flow ermöglicht es dem Nutzer, Passwörter lokal zu speichern und zu verschlüsseln. Die verschlüsselten Daten können vom Nutzer wieder entschlüsselt werden.</p>
+                
+                <h2>3. Datenschutz</h2>
+                <p>Die Software speichert alle Daten ausschließlich lokal auf dem Gerät des Nutzers. Es erfolgt keine Übertragung von Daten an externe Server.</p>
+                
+                <h2>4. Keine Schadsoftware</h2>
+                <p>Die Software enthält nach bestem Wissen des Entwicklers keine Schadsoftware, Viren oder versteckte Funktionen.</p>
+                
+                <h2>5. Sicherheitshinweis</h2>
+                <p>Obwohl Pass Flow Verschlüsselung verwendet, wird keine Garantie für vollständige Sicherheit übernommen. Die Nutzung erfolgt auf eigene Verantwortung.</p>
+                
+                <h2>6. Haftungsausschluss</h2>
+                <p>Der Entwickler haftet nicht für Datenverlust, Sicherheitsprobleme oder Schäden, die durch die Nutzung der Software entstehen.</p>
+                
+                <h2>7. Urheberrecht</h2>
+                <p>Alle Rechte an der Software verbleiben beim Entwickler. Die Software darf nicht kopiert, verändert, weiterverbreitet oder verkauft werden ohne ausdrückliche Zustimmung.</p>
+                
+                <h2>8. Verbotene Nutzung</h2>
+                <p>Es ist untersagt, die Software zu analysieren, zu dekompilieren oder zu reverse engineeren.</p>
+                
+                <h2>9. Änderungen</h2>
+                <p>Der Entwickler behält sich vor, diese Vereinbarung jederzeit zu ändern.</p>
+            </div>
+
+            <div class="eula-actions">
+                <button class="btn-primary" onclick="acceptEula()">Ich akzeptiere die Bedingungen</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="impressum-overlay">
+        <div class="eula-container">
+            <h1>Impressum</h1>
+            <div class="eula-content">
+                <p><strong>Angaben gemäß § 5 DDG:</strong></p>
+                <p>[DEIN VOLLSTÄNDIGER NAME]<br>
+                [STRASSE UND HAUSNUMMER]<br>
+                [PLZ UND ORT]</p>
+                
+                <p><strong>Kontakt:</strong><br>
+                E-Mail: [DEINE E-MAIL-ADRESSE]<br>
+                Telefon: [DEINE TELEFONNUMMER]</p>
+
+                <p><strong>Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV:</strong><br>
+                [DEIN NAME]<br>
+                [DEINE ANSCHRIFT]</p>
+            </div>
+            <div class="eula-actions">
+                <button class="btn-primary" onclick="closeImpressum()">Schließen</button>
+            </div>
+        </div>
+    </div>
+
+    <nav>
+        <div class="nav-container">
+            <a href="#" class="logo">
+                Pass<span>Flow</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#workflow">Funktionsweise</a></li>
+                <li><a href="#security">Sicherheit</a></li>
+                <li><a href="#download">Download</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-badge">Verfügbar für Windows (CLI)</div>
+        <h1>Passwörter verwalten, <br>ohne die Cloud zu nutzen.</h1>
+        <p>Pass Flow ist eine leichtgewichtige Konsolen-App, die deine Sicherheit ernst nimmt. Speichere deine Zugangsdaten lokal, verschlüsselt und absolut privat.</p>
+        
+        <div class="hero-cta-box">
+            <a href="Pass%20Flow%20Setup.exe" class="btn-primary" style="padding: 16px 40px; font-size: 1.1rem;">Jetzt Pass Flow herunterladen</a>
+        </div>
+        
+        <div class="terminal-window">
+            <div class="terminal-header">
+                <div class="dot dot-red"></div>
+                <div class="dot dot-yellow"></div>
+                <div class="dot dot-green"></div>
+            </div>
+            <div class="terminal-body">
+                <p><span class="cmd">user@desktop:~$</span> passflow --init</p>
+                <p>Initializing Pass Flow vault...</p>
+                <p><span class="cmd">user@desktop:~$</span> passflow --add</p>
+                <p>Enter App Name: <span style="color: #60a5fa">Instagram</span></p>
+                <p>Enter Password: <span style="color: #60a5fa">********</span></p>
+                <p>[SUCCESS] Password saved to <span style="color: #fbbf24">Desktop/Instagram.txt</span> (Encrypted)</p>
+                <p><span class="cmd">user@desktop:~$</span> <span class="cursor">_</span></p>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="section-padding">
+        <div class="container">
+            <div class="section-title">
+                <h2>Warum Pass Flow?</h2>
+                <p>Einfachheit trifft auf maximale Diskretion.</p>
+            </div>
+            <div class="grid">
+                <div class="card">
+                    <div class="icon-box">🔒</div>
+                    <h3>Lokale Verschlüsselung</h3>
+                    <p>Deine Passwörter werden mit militärischem Standard (AES-256) verschlüsselt, bevor sie auf die Festplatte geschrieben werden.</p>
+                </div>
+                <div class="card">
+                    <div class="icon-box">📂</div>
+                    <h3>Desktop-Integration</h3>
+                    <p>Für jede App wird automatisch ein .txt Dokument auf deinem Desktop erstellt. Sauber, ordentlich und immer griffbereit.</p>
+                </div>
+                <div class="card">
+                    <div class="icon-box">🌐</div>
+                    <h3>Offline-First</h3>
+                    <p>Keine Server, keine Accounts, kein Tracking. Pass Flow funktioniert zu 100% offline auf deinem eigenen Setup.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="workflow" class="section-padding workflow">
+        <div class="container">
+            <div class="section-title">
+                <h2>So funktioniert es</h2>
+                <p>In drei einfachen Schritten zu mehr Sicherheit.</p>
+            </div>
+
+            <div class="step-item">
+                <div class="step-text">
+                    <div class="step-number">01</div>
+                    <h3>Eingabe über die Konsole</h3>
+                    <p>Starte Pass Flow direkt in deinem Windows-Terminal (CMD oder PowerShell). Gib den Namen der App und dein gewünschtes Passwort ein.</p>
+                </div>
+                <div style="flex: 1; text-align: center;">
+                    <span style="font-size: 8rem;">⌨️</span>
+                </div>
+            </div>
+
+            <div class="step-item">
+                <div class="step-text">
+                    <div class="step-number">02</div>
+                    <h3>Automatische Speicherung</h3>
+                    <p>Pass Flow legt sofort eine Datei auf deinem Desktop an. Der Dateiname entspricht deiner App (z.B. `Amazon.txt`), der Inhalt ist jedoch komplett verschlüsselt.</p>
+                </div>
+                <div style="flex: 1; text-align: center;">
+                    <span style="font-size: 8rem;">📝</span>
+                </div>
+            </div>
+
+            <div class="step-item">
+                <div class="step-text">
+                    <div class="step-number">03</div>
+                    <h3>Sicheres Auslesen</h3>
+                    <p>Willst du das Passwort wieder lesen? Nutze den intigrierten Passwort Öffner . Die App entschlüsselt die Daten und zeigt das Passwort an.</p>
+                </div>
+                <div style="flex: 1; text-align: center;">
+                    <span style="font-size: 8rem;">🔑</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="security" class="section-padding">
+        <div class="container">
+            <div class="security-banner">
+                <h2>Sicherheit ohne Kompromisse</h2>
+                <p>Pass Flow wurde für Windows-Nutzer entwickelt, die absolute Kontrolle über ihre Daten wollen. Dein Desktop ist dein Tresor. Wir liefern nur den Schlüssel.</p>
+                <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+                    <span style="background: rgba(255,255,255,0.1); padding: 10px 20px; border-radius: 10px;">AES-256</span>
+                    <span style="background: rgba(255,255,255,0.1); padding: 10px 20px; border-radius: 10px;">Lokaler Speicher</span>
+                    <span style="background: rgba(255,255,255,0.1); padding: 10px 20px; border-radius: 10px;">Zero-Knowledge</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="download" class="section-padding" style="text-align: center;">
+        <div class="container">
+            <h2>Holen Sie sich Pass Flow</h2>
+            <p style="margin-bottom: 40px; color: var(--text-muted);">Klicken Sie unten, um die ausführbare Datei für Windows herunterzuladen.</p>
+            <div style="display: flex; justify-content: center;">
+                <a class ="btn-primary" href = "Pass%20Flow%20Setup.exe">Download Windows(.exe)</a>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Pass Flow für Windows | Entwickelt für maximale Privatsphäre.</p>
+            <div class="footer-links">
+                <a onclick="openImpressum()">Impressum</a>
+            </div>
+            <p style="font-size: 0.8rem; margin-top: 10px;">Diese Software unterliegt der oben stehenden EULA.</p>
+        </div>
+    </footer>
+
+    <script>
+        // EULA LOGIC
+        window.onload = function() {
+            if (localStorage.getItem('eulaAccepted') === 'true') {
+                document.getElementById('eula-overlay').style.display = 'none';
+                document.body.style.overflow = 'auto';
+            } else {
+                document.body.style.overflow = 'hidden';
+            }
+        };
+
+        function acceptEula() {
+            localStorage.setItem('eulaAccepted', 'true');
+            document.getElementById('eula-overlay').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('eula-overlay').style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }, 500);
+        }
+
+        // IMPRESSUM FUNCTIONS
+        function openImpressum() {
+            document.getElementById('impressum-overlay').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeImpressum() {
+            document.getElementById('impressum-overlay').style.display = 'none';
+            // Nur Scrollen erlauben, wenn EULA schon akzeptiert wurde
+            if (localStorage.getItem('eulaAccepted') === 'true') {
+                document.body.style.overflow = 'auto';
+            }
+        }
+
+        // Smooth Scroll für Nav Links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+        // Simpler Scroll-Header Effekt
+        window.onscroll = function() {
+            const nav = document.querySelector('nav');
+            if (window.pageYOffset > 50) {
+                nav.style.boxShadow = "0 2px 10px rgba(0,0,0,0.1)";
+                nav.style.height = "70px";
+            } else {
+                nav.style.boxShadow = "none";
+                nav.style.height = "80px";
+            }
+        };
+    </script>
+</body>
+</html>
